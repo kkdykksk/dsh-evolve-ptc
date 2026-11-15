@@ -1,0 +1,91 @@
+{
+  "name": "dsh-evolve-ptc",
+  "version": "0.1.0",
+  "description": "Evolve PTC for DeepSeek Harness: a verifiable computer-operation contract, a task ledger the agent must keep, self-correcting detectors that block repeats, a rule store that survives sessions, and a creation mode that scaffolds, validates, smoke-tests and installs new plugins before rolling back on failure.",
+  "type": "module",
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "agent-preset",
+    "ptc",
+    "self-correction",
+    "self-evolution",
+    "creation-mode",
+    "computer-use",
+    "task-ledger"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=24",
+    "dsh": ">=0.2.2-rc.1"
+  },
+  "dsh": {
+    "manifestVersion": 1,
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-ui-plugin-manager",
+        "@deepseek-ai/dsh-client-ui-commands"
+      ]
+    }
+  },
+  "main": "lib/index.mjs",
+  "exports": {
+    ".": "./lib/index.mjs",
+    "./runtime": "./lib/runtime.mjs",
+    "./creation": "./lib/creation.mjs",
+    "./client": "./lib/client.js",
+    "./icon": "./assets/icon.png",
+    "./locale/*.json": "./locale/*.json",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "cordis.patch.yml",
+    "lib",
+    "locale",
+    "docs",
+    "assets/icon.png",
+    "README.md",
+    "README.zh.md"
+  ],
+  "scripts": {
+    "test": "node scripts/check.mjs",
+    "check": "node --check lib/index.mjs && node --check lib/derive.mjs && node --check lib/runtime.mjs && node --check lib/state.mjs && node --check lib/creation.mjs"
+  },
+  "dependencies": {
+    "js-yaml": "^4.3.2"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh-agent-preset": ">=0.2.2-rc.1",
+    "@deepseek-ai/dsh-tools": ">=0.2.2-rc.1",
+    "@deepseek-ai/dsh-system-prompt": ">=0.2.2-rc.1",
+    "@deepseek-ai/dsh-client-ui-settings": ">=0.2.2-rc.1",
+    "@deepseek-ai/dsh-client-locale": ">=0.2.2-rc.1",
+    "@deepseek-ai/dsh-web-app": ">=0.2.2-rc.1"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh-agent-preset": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-tools": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-system-prompt": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-client-ui-settings": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-client-locale": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-web-app": {
+      "optional": true
+    }
+  }
+}

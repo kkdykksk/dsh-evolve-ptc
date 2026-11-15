@@ -1,0 +1,26 @@
+# Evolve PTC: one settings row. The agent preset itself is derived at load time
+# from the PTC preset the installed Harness declares, so this file never pins
+# upstream row ids that a Harness upgrade could rename.
+#
+# The row id is deliberately distinct from `evolve-ptc` (the preset id) and from
+# `evolve-ptc-settings` used by the settings service.
+- insert:
+    - id: evolve-ptc-settings
+      name: dsh-evolve-ptc
+      config:
+        # auto | wsl | powershell | zsh | bash
+        environment: auto
+        wslDistribution: ''
+        shellExecutable: ''
+        # Foreground commands longer than this move to a background job instead
+        # of blocking the conversation (5-600 seconds).
+        foregroundSeconds: 30
+        # Jobs that sit unchanged this long are reported as stalled (>=60).
+        stallSeconds: 240
+        # Creation mode: scaffold, validate, smoke-test, install with rollback.
+        creationMode: true
+        # Self-evolution: accumulate lessons and inject the best ones.
+        rulesInjection: true
+        maxRules: 8
+        # Unedited session ledgers are pruned after this many days (1-90).
+        ledgerRetentionDays: 14

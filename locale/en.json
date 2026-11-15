@@ -1,0 +1,7 @@
+{
+  "meta": {
+    "title": "Evolve PTC mode",
+    "description": "Adds an agent mode for computer work that has to be checkable: every write is followed by a read-back, the agent keeps a task ledger the user can see, four detectors catch repeated failures, spinning and unverified writes and escalate to a hard block after three hits, and lessons become rules that carry into later sessions. Pick Evolve PTC mode in the mode selector of a new conversation; use the evolve tool for plan/note/check/reflect/rules, and /evolve-status for a ledger summary. Creation mode scaffolds, validates, smoke-tests, installs and rolls back new plugins, snapshotting the profile first. Settings > Evolve PTC tunes the environment, the foreground-to-background threshold and injection. Takes effect in new conversations; replacing the installed version needs an app restart.",
+    "detail": "docs/DETAIL.md"
+  }
+}
