@@ -1,0 +1,8 @@
+node_modules/
+*.tgz
+pkg-verify*/
+.plugin-manager/
+*.log
+status.log
+.DS_Store
+Thumbs.db
