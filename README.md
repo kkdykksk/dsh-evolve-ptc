@@ -62,9 +62,12 @@ Activity comes from the session itself (`tool/call` paired with `tool/result`, p
 | `unverifiedWrite` | a write tool (`computer_click/type/key/…`, `browser_actions`, `write`, `edit`) is followed by another write with no observable call in between | take a screenshot / read the file first |
 | `softFailures` | ≥3 scattered failures | one `reflect`, then continue |
 
-Every hit is written to the ledger and injects a correction block. Three consecutive hits from one detector
-escalate to a **hard block**: `tools.guard` rejects everything except `evolve` until you `reflect` (or
-`override`). The guard degrades to a plain hint if the host's signature does not match — it never takes the
+Every hit is written to the ledger and injects a correction block. Only `repeatFailure` escalates to a
+**hard block** (`hardBlockAfter` hits, default 3): `tools.guard` rejects **write tools only** — reads,
+screenshots, searches and `evolve` always pass, because a blocked agent that cannot gather evidence is
+just stuck. The block lifts itself after 120 s, and `reflect` / `override` clear it immediately. Strikes
+are deduplicated by evidence fingerprint, so one batch of failures seen again on later steps counts once,
+and any successful action resets the counters. The guard degrades to a plain hint if the host's signature does not match — it never takes the
 host down.
 
 ## Creation mode

@@ -78,9 +78,10 @@ dsh plugin --profile <profile> add <本目录绝对路径>
 | `unverifiedWrite` | 写入类工具（`computer_click/type/key/...`、`browser_actions`、`write`、`edit`）之后没有可观测工具回读就继续写 | 先截图/读文件确认 |
 | `softFailures` | 零散失败累计 ≥3 | 一次 `reflect` 再继续 |
 
-命中即写入账本、注入纠错块；**同一检测器连续命中 3 次**（`hardBlockAfter`）升级为**硬拦截**：除
-`evolve` 之外的工具全部被 `tools.guard` 拒绝，直到显式 `reflect` 或 `override`。防护是可降级的：
-guard 签名不匹配时自动退化为提示，绝不让宿主崩。
+命中即写入账本、注入纠错块。升级为**硬拦截**（`hardBlockAfter` 次，默认 3）的只有 `repeatFailure`：
+`tools.guard` **只拒绝写操作**，读文件 / 截图 / 搜索与 `evolve` 永远放行，否则模型被锁住又无法取证。
+拦截 **120 秒后自动解除**，`reflect` 或 `override` 可立即解除。计数按**证据指纹**去重——同一批失败在
+后续每一步被重复看见只算一次，最近一次动作成功后清零。guard 签名不匹配时自动退化为提示，绝不让宿主崩。
 
 ## 创造模式
 

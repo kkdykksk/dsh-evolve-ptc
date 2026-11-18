@@ -115,9 +115,12 @@ export async function runRuntimeSmoke() {
       if (!String(text).includes('计划')) fail('注入段里看不到计划进度', '检查 renderPlan');
     }
 
-    // ④ 检测器 + 硬拦截（升级要连续命中 hardBlockAfter 次，真实场景每步一次 → 连跑 3 步）
+    // ④ 检测器 + 硬拦截：升级要求「新证据」累计 hardBlockAfter 次，所以每步都要造一批新的失败，
+    //    这也正是真实场景——同一批失败在后续每一步被重复看见时不应该继续计数。
     if (preStep) {
       for (let step = 2; step <= 3; step += 1) {
+        agent.session.events.push({ type: 'tool/call', data: { callId: `f${step}`, name: 'computer_click', args: { x: 1, y: 2 } } });
+        agent.session.events.push({ type: 'tool/result', data: { callId: `f${step}`, error: { message: 'timeout' } } });
         await preStep({ agent, messages: [], turn: 1, step }, async () => ({ kind: 'enter', messages: [] }));
       }
       const segments = state.sections.filter(entry => entry.name === 'evolve-ptc:process');
@@ -139,10 +142,33 @@ export async function runRuntimeSmoke() {
           break;
         }
       }
-      if (blocked === '') fail('连续失败三次后 guard 没有拦截非 evolve 工具', '检查 runDetectors 的 block.active 与 guard 的参数解析');
+      if (blocked === '') fail('连续失败三次后 guard 没有拦截写操作', '检查 runDetectors 的 block.active 与 guard 的参数解析');
       else notes.push('硬拦截 ok');
       const evolveCall = guard({ name: 'evolve' });
       if (typeof evolveCall === 'string') fail('guard 把 evolve 自己也拦了（会死锁）', 'guard 里必须放行 evolve');
+      // 读操作必须永远可用：拦截期间模型仍要能截图/读文件/搜索来定位问题。
+      for (const readTool of ['read', 'computer_screenshot', 'ops_grep']) {
+        if (typeof guard({ name: readTool }) === 'string') fail(`guard 拦了只读工具 ${readTool}（会让模型无法自证）`, 'guard 里只拦 WRITE_TOOLS');
+      }
+    }
+
+    // ④b 回归：活动没有任何变化时，同一次失败不得被反复计数（v0.1.0 的三步锁死事故）
+    {
+      const second = createStubContext();
+      const { apply: applyAgain } = await import('../lib/runtime.mjs');
+      await applyAgain(second.ctx, { processInjection: true, rulesInjection: true, creationMode: false, hardBlockAfter: 3 });
+      const preStep2 = second.state.listeners.get('agent/pre-step')?.[0];
+      const stuck = failingAgent(root);
+      for (let step = 1; step <= 6; step += 1) {
+        await preStep2({ agent: stuck, messages: [], turn: 1, step }, async () => ({ kind: 'enter', messages: [] }));
+      }
+      const guard2 = second.state.guards[0];
+      const verdict = guard2?.({ name: 'computer_click' });
+      if (typeof verdict === 'string') {
+        fail('活动没有变化时也升级成了硬拦截（旧版每步自增 strikes 的回归）', 'runDetectors 里用证据指纹去重');
+      } else {
+        notes.push('命中去重 ok');
+      }
     }
 
     // ⑤ 规则沉淀
