@@ -13,6 +13,12 @@ const describe = error => (error instanceof Error ? error.message : String(error
 
 function createStubContext() {
   const state = { tools: [], guards: [], sections: [], listeners: new Map(), commands: [], disposers: [] };
+  const commandsService = {
+    register(command) {
+      state.commands.push(command);
+      return () => {};
+    },
+  };
   const ctx = {
     logger: { info: () => {}, warn: () => {}, error: () => {} },
     tools: {
@@ -44,14 +50,10 @@ function createStubContext() {
       if (typeof disposer === 'function') state.disposers.push(disposer);
       return () => {};
     },
-    commands: {
-      register(command) {
-        state.commands.push(command);
-        return () => {};
-      },
-    },
-    get() {
-      return undefined;
+    commands: commandsService,
+    get(name) {
+      // 真实宿主里可选服务走 ctx.get 取；桩里把 commands 暴露给这条路径。
+      return name === 'commands' ? commandsService : undefined;
     },
   };
   return { ctx, state };

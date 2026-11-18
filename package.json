@@ -1,6 +1,6 @@
 {
   "name": "dsh-evolve-ptc",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Evolve PTC for DeepSeek Harness: a verifiable computer-operation contract, a task ledger the agent must keep, self-correcting detectors that block repeats, a rule store that survives sessions, and a creation mode that scaffolds, validates, smoke-tests and installs new plugins before rolling back on failure.",
   "type": "module",
   "keywords": [
