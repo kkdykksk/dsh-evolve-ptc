@@ -366,6 +366,18 @@ console.log('[7/7] 运行时冒烟（工具 / 注入 / 检测器 / 硬拦截 / �
   }
 }
 
+// ── 10. 回归测试（v0.1.4 修复项） ────────────────────────────────────────
+{
+  try {
+    const regression = await import('../test/regression.mjs');
+    const result = regression.regressionResult;
+    if (result && result.fail > 0) fail(`回归测试 ${result.fail} 项失败`, '检查 test/regression.mjs 输出');
+    else if (result) pass(`回归测试 ${result.pass} 项通过`);
+  } catch (error) {
+    fail(`回归测试加载失败：${error instanceof Error ? error.message : String(error)}`, '检查 test/regression.mjs');
+  }
+}
+
 // 清理自检产生的临时状态。
 try { rmSync(checkStateRoot, { recursive: true, force: true }); } catch { /* 忽略 */ }
 

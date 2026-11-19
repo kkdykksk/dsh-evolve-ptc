@@ -74,8 +74,11 @@ export async function runRuntimeSmoke() {
   const notes = [];
   const fail = (message, fix) => failures.push({ message, fix });
   const previousRoot = process.env.EVOLVE_ROOT;
+  const previousAllowRaw = process.env.EVOLVE_PTC_ALLOW_RAW_DEFINE;
   const root = mkdtempSync(join(tmpdir(), 'evolve-runtime-'));
   process.env.EVOLVE_ROOT = root;
+  // 桩 ctx 没有宿主 @deepseek-ai/dsh-tools；显式允许原始定义，别把「测试环境缺模块」当成注册失败。
+  process.env.EVOLVE_PTC_ALLOW_RAW_DEFINE = '1';
   try {
     const { apply } = await import('../lib/runtime.mjs');
     const { ctx, state } = createStubContext();
@@ -189,6 +192,8 @@ export async function runRuntimeSmoke() {
     failures.push({ message: `运行时冒烟抛异常：${describe(error)}`, fix: '从上面的堆栈定位 runtime.mjs' });
   } finally {
     process.env.EVOLVE_ROOT = previousRoot;
+    if (previousAllowRaw === undefined) delete process.env.EVOLVE_PTC_ALLOW_RAW_DEFINE;
+    else process.env.EVOLVE_PTC_ALLOW_RAW_DEFINE = previousAllowRaw;
     try {
       rmSync(root, { recursive: true, force: true });
     } catch {

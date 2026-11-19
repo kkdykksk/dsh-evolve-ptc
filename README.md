@@ -144,3 +144,16 @@ prints its source); point `EVOLVE_PTC_UPSTREAM` / `EVOLVE_PTC_CORDIS` at the rea
   degrades to an explicit instruction instead of a silent failure.
 - v1 does not rewrite the official shell rows (no executor-group isolation); `environment` is guidance only.
 - Rules are scoped per working directory and not shared across machines; rule quality is whatever `reflect` wrote.
+
+## Changelog
+
+### 0.1.4 (2026-11-19) — audit fixes
+
+- Corrective hard-block now honors `correctiveBlocks=false` on **every** path (previously `evolve check` could still lock the session).
+- A done-with-evidence note is now required to clear strikes; an empty `note` can no longer bypass a hard block.
+- Detector/strike/block state is bucketed per session: one session's repeated failures no longer lock another session's writes.
+- Detector false positives fixed: argument-less observation tools no longer trip `spin`; failed writes no longer report `unverifiedWrite`; stale timestamps no longer produce `NaN` ranking.
+- Volatile config changes now re-normalize on `loader/volatile-update` (no restart needed); a failed preset re-registration keeps the previous registration instead of dropping it.
+- Creation mode: entry paths (`main`/`exports`) are validated to stay inside the package; overwrite rollback restores original file content instead of deleting it; `application:''` is no longer reported as a successful install; snapshot selection uses exact package-name matching; path comparison is case-normalized on Windows.
+- Self-check now imports the real entry module, runs `node --check` on all source files, asserts locale symmetry, and runs a 7-case regression suite (`test/regression.mjs`).
+- `engines.node` lowered to `>=22.15` to match the actual runtime; generated plugin templates follow suit.

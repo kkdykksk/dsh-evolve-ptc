@@ -168,3 +168,16 @@ node scripts/check.mjs      # 或 npm test
   本插件不 import 它的内部模块（只看公开契约），避免上游改动把新模式一起弄坏。
 - **OPS (PTC)（`ops-ptc`）**：typed 文件 API + 渐进式 SDK 加载。两者可共存：本插件只用官方 `ptc` 文档派生，
   不注册 `ops_*` 工具，也不抢 `run_code`。
+
+## 变更记录
+
+### 0.1.4（2026-11-19）— 审查修复
+
+- 纠错硬拦截在所有路径上都尊重 `correctiveBlocks=false`（此前 `evolve check` 仍可能锁死会话）。
+- 只有带证据的完成态记账才能清零计数；空 `note` 不再能绕过硬拦截。
+- 检测器/计数/拦截状态按会话分桶：一个会话的连续失败不再锁死另一个会话的写操作。
+- 修复检测器误报：无参观察工具不再触发 `spin`；失败的写操作不再报 `unverifiedWrite`；脏时间戳不再产生 `NaN` 排序。
+- volatile 配置改动在 `loader/volatile-update` 时重新归一化（无需重启）；预设重注册失败时保留原注册而不是丢弃它。
+- 创造模式：入口路径（`main`/`exports`）校验必须在包内；覆盖回滚恢复原文件内容而非删除它；`application:''` 不再被报告为安装成功；快照选择改用精确包名匹配；Windows 下路径比较统一大小写。
+- 自检现在会 import 真实入口模块、对全部源文件跑 `node --check`、断言 locale 键对称，并运行 7 项回归测试（`test/regression.mjs`）。
+- `engines.node` 降到 `>=22.15` 以匹配实际运行时；生成的插件模板同步调整。

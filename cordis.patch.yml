@@ -15,12 +15,21 @@
         # Foreground commands longer than this move to a background job instead
         # of blocking the conversation (5-600 seconds).
         foregroundSeconds: 30
+        # Process-injection cadence and per-step size (1-20 steps).
+        processInjection: true
+        injectionEvery: 1
         # Jobs that sit unchanged this long are reported as stalled (>=60).
         stallSeconds: 240
+        # Corrective detectors: inject hints, and hard-block repeated writes.
+        correctiveBlocks: true
+        hardBlockAfter: 3
         # Creation mode: scaffold, validate, smoke-test, install with rollback.
         creationMode: true
+        pluginWorkspace: ''
+        autoRollback: true
+        snapshotBeforeInstall: true
         # Self-evolution: accumulate lessons and inject the best ones.
         rulesInjection: true
         maxRules: 8
-        # Unedited session ledgers are pruned after this many days (1-90).
+        # Unedited session ledgers are pruned after this many days (0-365; 0 disables).
         ledgerRetentionDays: 14
