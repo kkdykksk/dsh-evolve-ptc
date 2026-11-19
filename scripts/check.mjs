@@ -9,11 +9,11 @@
  *
  * 创造模式每造一个插件都会跑同源的检查（见 lib/creation.mjs 的 validateBundle）。
  */
-import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
-import { DEFAULTS, normalizeConfig } from '../lib/config.mjs';
+import { DEFAULTS, normalizeConfig, overrideFile } from '../lib/config.mjs';
 import { createResolver } from '../lib/resolve.mjs';
 import { derivePreset, PRESET_ID, PRESET_ORDER, RUNTIME_ROW_ID } from '../lib/derive.mjs';
 import { detect, rankRules, recordLesson, scopeForCwd } from '../lib/state.mjs';
@@ -99,6 +99,23 @@ else {
     if (!known.has(key)) fail(`配置键 ${key} 不在 DEFAULTS 里（会被 normalizeConfig 丢弃）`, '在 lib/config.mjs 的 DEFAULTS 里加，或从 patch 删掉');
     else pass(`配置键 ${key}`);
   }
+}
+
+// ── 2b. 入口契约（import 真模块，防止「文件存在但导出损坏」的假阳性） ────
+try {
+  const entry = await import('../lib/index.mjs');
+  if (typeof entry.apply !== 'function') fail('lib/index.mjs 没有导出 apply()', '检查入口模块');
+  if (entry.name !== 'evolve-ptc-settings') fail(`入口导出 name 应为 evolve-ptc-settings（实际 ${entry.name}）`, '检查 lib/index.mjs');
+  if (!Array.isArray(entry.inject) || !entry.inject.includes('agentPresets')) fail('入口 inject 缺 agentPresets', '检查 lib/index.mjs 的 inject');
+  if (typeof entry.status !== 'function') fail('入口缺 status() 诊断导出', '检查 lib/index.mjs');
+  else {
+    const status = entry.status();
+    if (!status || status.presetId !== 'evolve-ptc') fail('status() 未按约定返回 presetId=evolve-ptc', '检查 lib/index.mjs 的 status()');
+  }
+  if (entry.Config === undefined) note('Config 未导出（宿主 schemastery 不可用时的合法降级）');
+  else pass('入口契约 ok（apply/name/inject/status/Config）');
+} catch (error) {
+  fail(`import lib/index.mjs 失败：${error instanceof Error ? error.message : String(error)}`, '入口模块坏了，自检不能只靠 existsSync');
 }
 
 // ── 3. 预设派生 ──────────────────────────────────────────────────────────
@@ -203,6 +220,17 @@ try {
   });
   if (clean.length > 0) fail(`干净序列被误报：${JSON.stringify(clean)}`, '检查 observe/write 工具集');
   else pass('无误报');
+  // 本地覆盖文件（$DSH_HOME/evolve/config.json）必须压过显式传入的配置值。
+  const overridePath = overrideFile();
+  try {
+    writeFileSync(overridePath, JSON.stringify({ correctiveBlocks: false, maxRules: 3 }));
+    const merged = normalizeConfig({ correctiveBlocks: true, maxRules: 8 });
+    if (merged.correctiveBlocks !== false || merged.maxRules !== 3) {
+      fail('本地覆盖 config.json 没有生效', '检查 config.mjs 的 normalizeConfig/readOverrides');
+    } else pass('覆盖文件 ok');
+  } finally {
+    try { rmSync(overridePath, { force: true }); } catch { /* 清理失败不影响结论 */ }
+  }
 } catch (error) {
   fail(`状态层抛异常：${error instanceof Error ? error.message : String(error)}`, '检查 state.mjs');
 }
@@ -300,6 +328,41 @@ console.log('[7/7] 运行时冒烟（工具 / 注入 / 检测器 / 硬拦截 / �
     if (result.failures.length === 0) pass('运行时主链路 ok');
   } catch (error) {
     fail(`运行时冒烟加载失败：${error instanceof Error ? error.message : String(error)}`, '检查 test/runtime-smoke.mjs');
+  }
+}
+
+// ── 8. 全源语法（lib 下每个 js/mjs 都要过 node --check） ──────────────────
+{
+  const { spawnSync } = await import('node:child_process');
+  const { readdirSync } = await import('node:fs');
+  const asText = value => (typeof value === 'string' ? value : String(value ?? ''));
+  const libFiles = readdirSync(join(root, 'lib'))
+    .filter(file => /\.(mjs|js|cjs)$/.test(file))
+    .map(file => join(root, 'lib', file));
+  let syntaxBad = 0;
+  for (const file of libFiles) {
+    const result = spawnSync(process.execPath, ['--check', file], { encoding: 'utf8', timeout: 15000 });
+    if (result.status !== 0) {
+      syntaxBad += 1;
+      fail(`语法错误：${file}：${asText(result.stderr).split('\n')[0]}`, '修语法错误');
+    }
+  }
+  if (syntaxBad === 0) pass(`全部 ${libFiles.length} 个源文件语法通过`);
+}
+
+// ── 9. locale 中英对称 + client.js t() 键覆盖 ────────────────────────────
+{
+  const readLocale = name => {
+    try { return JSON.parse(readFileSync(join(root, 'locale', name), 'utf8')); } catch { return null; }
+  };
+  const en = readLocale('en.json');
+  const zh = readLocale('zh.json');
+  if (!en || !zh) fail('locale/en.json 或 zh.json 无法解析', '修 JSON');
+  else {
+    const enKeys = Object.keys(en.meta ?? {}).sort().join(',');
+    const zhKeys = Object.keys(zh.meta ?? {}).sort().join(',');
+    if (enKeys !== zhKeys) fail(`locale meta 键不对称：en=[${enKeys}] zh=[${zhKeys}]`, '两边补成一致');
+    else pass(`locale meta 键对称（${Object.keys(en.meta).length} 项）`);
   }
 }
 

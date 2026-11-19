@@ -100,12 +100,26 @@ Ledgers live in `$DSH_HOME/evolve/ledgers/<sessionId>.jsonl`, trimmed to the las
 
 ## Configuration
 
-Row `evolve-ptc-settings` in `cordis.patch.yml`, or the settings card. Every value is clamped; bad values fall
-back to defaults.
+Three sources, lowest priority first: schema defaults → row `evolve-ptc-settings` in `cordis.patch.yml`
+(or the settings card) → **the local override file**. Every value is clamped; bad values fall back to defaults.
+
+**Local override file**: `$DSH_HOME/evolve/config.json` (`C:\dsh-home\evolve\config.json` on Windows).
+It wins over everything else, so it only has to name the keys you change — for example, to switch the
+corrective gate off entirely:
+
+```json
+{ "correctiveBlocks": false }
+```
+
+Restart DeepSeek Harness afterwards; configuration is read once at plugin start.
+
+> ⚠️ Do not hand-edit `profiles/<profile>/cordis.patch.yml`: that file belongs to the host and is rewritten
+> wholesale on every exit/restart, so hand-added rows are dropped. Use the override file instead.
 
 `environment` (`auto|wsl|powershell|zsh|bash`) · `wslDistribution` · `shellExecutable` ·
 `foregroundSeconds` (30, 5–600) · `processInjection` (true) · `injectionEvery` (1) · `stallSeconds` (240) ·
-`correctiveBlocks` (true) · `hardBlockAfter` (3, 2–8) · `rulesInjection` (true) · `maxRules` (8) ·
+`correctiveBlocks` (true — master switch; off means the detectors never run: no strikes, no corrective
+injection, no tool is ever blocked) · `hardBlockAfter` (3, 2–8) · `rulesInjection` (true) · `maxRules` (8) ·
 `creationMode` (true) · `pluginWorkspace` · `autoRollback` (true) · `ledgerRetentionDays` (14) ·
 `snapshotBeforeInstall` (true)
 

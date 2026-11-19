@@ -112,7 +112,17 @@ link，写进去等于改仓库）。
 
 ## 配置
 
-`cordis.patch.yml` 的 `evolve-ptc-settings` 行，或设置卡片。值都会被夹到合法区间，坏值退回默认。
+三种来源，优先级从低到高：schema 默认值 → `cordis.patch.yml` 的 `evolve-ptc-settings` 行（或设置卡片）→ **本地覆盖文件**。值都会被夹到合法区间，坏值退回默认。
+
+**本地覆盖文件**：`$DSH_HOME/evolve/config.json`（Windows 默认 `C:\dsh-home\evolve\config.json`）。它优先级最高，只需要写出你要改的键，例如彻底关掉纠错拦截：
+
+```json
+{ "correctiveBlocks": false }
+```
+
+改完要重启 DeepSeek Harness 才生效（配置在插件启动时读一次）。
+
+> ⚠️ 不要手改 `profiles/<profile>/cordis.patch.yml`：那是宿主自己的文件，每次退出/重启都会按内存里的组合整体重写，手写的行会被丢掉。要改配置就用上面的覆盖文件。
 
 | 键 | 默认 | 范围 / 说明 |
 | --- | --- | --- |
@@ -122,7 +132,7 @@ link，写进去等于改仓库）。
 | `processInjection` | `true` | 每步注入 `[EVOLVE 进程]` |
 | `injectionEvery` | `1` | 每 N 步刷新注入文本 |
 | `stallSeconds` | `240` | ≥60；阶段原地不动超过它算停滞 |
-| `correctiveBlocks` | `true` | 命中检测器时注入纠错块 |
+| `correctiveBlocks` | `true` | 纠错拦截总开关。关掉 = 检测器完全不运行：不记失败、不注入纠错、不拦任何工具 |
 | `hardBlockAfter` | `3` | 2–8；同一检测器连续命中几次升级为硬拦截 |
 | `rulesInjection` / `maxRules` | `true` / `8` | 规则注入开关与条数上限 |
 | `creationMode` | `true` | 允许 `plugin` 系列操作 |
